@@ -1,1 +1,1 @@
-docker-resque
+An empty resque container
