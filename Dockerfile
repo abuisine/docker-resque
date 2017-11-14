@@ -1,7 +1,6 @@
 FROM php:7.1
 
-LABEL maintainer="Alexandre Buisine <alexandrejabuisine@gmail.com>"
-LABEL version="3.0.0"
+LABEL maintainer="Alexandre Buisine <alexandrejabuisine@gmail.com>" version="3.1.0"
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update \
  && apt-get install -yqq \
@@ -12,7 +11,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update \
  && apt-get -yqq clean \
  && rm -rf /var/lib/apt/lists/*
 
-ENV PHP_REDIS_VERSION="3.1.2" IGBINARY_VERSION="2.0.1"
+ENV PHP_REDIS_VERSION=3.1.2 IGBINARY_VERSION=2.0.1
 
 RUN docker-php-ext-install -j$(nproc) pdo_mysql \
  && docker-php-ext-install -j$(nproc) curl \
@@ -28,10 +27,18 @@ RUN mkdir /tmp/redis && curl -L https://github.com/phpredis/phpredis/archive/${P
  && rm -r /tmp/redis \
  && docker-php-ext-enable redis
 
+ADD https://github.com/kreuzwerker/envplate/releases/download/v0.0.8/ep-linux /usr/local/bin/ep
 COPY resources/php.ini /usr/local/etc/php/php.ini
+COPY resources/docker-entrypoint.sh /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/ep
 
 STOPSIGNAL SIGQUIT
 
-ENV SYMLINK_FOLDER="/var/cron/current"
+ENV SYMLINK_FOLDER="/var/cron/current" \
+	PHP_ERROR_REPORTING=E_ALL \
+	PHP_DISPLAY_ERRORS=On \
+	XDEBUG_ENABLED=false
 
-ENTRYPOINT ["php", "/var/cron/current/resque/resque.php"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["php", "/var/cron/current/resque/resque.php"]
